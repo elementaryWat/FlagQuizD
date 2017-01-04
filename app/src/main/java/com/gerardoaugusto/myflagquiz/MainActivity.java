@@ -1,5 +1,6 @@
 package com.gerardoaugusto.myflagquiz;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -30,8 +31,14 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this,R.xml.preferences,false);
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                preferencesChanged=true;
 
+                MainActivityFragment quizFragment= (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.quizFragment);
+
+                if (key.equals(CHOICES)){
+                    //quizFragment.updateGuessRows(sharedPreferences);
+                }
             }
         });
         int screenSize=getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK;
@@ -71,16 +78,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
+        //Se inicia el activity de las configuraciones
+        Intent preferencesIntent=new Intent(this, SettingsActivity.class);
+        startActivity(preferencesIntent);
         return super.onOptionsItemSelected(item);
     }
 }
