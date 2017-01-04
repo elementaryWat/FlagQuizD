@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
         int screenSize=getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK;
         //LARGE Y XLARGE son tamaños de pantalla de tablet
         if (screenSize==Configuration.SCREENLAYOUT_SIZE_LARGE || screenSize==Configuration.SCREENLAYOUT_SIZE_XLARGE)
@@ -49,10 +48,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        if (preferencesChanged)
+        {
+            MainActivityFragment MyFrag= (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.quizFragment);
+            //Llamar a los metodos para actualizar el cuestionario de acuerdo a las preferencias
+        }
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+        int orientation=getResources().getConfiguration().orientation;
+        //Mostrara el boton de configuracion en el menu si esta en orientacion vertical
+        if (orientation==Configuration.ORIENTATION_PORTRAIT)
+        {
+            getMenuInflater().inflate(R.menu.menu_main, menu);
+            return true;
+        }
+        return false;
     }
 
     @Override
