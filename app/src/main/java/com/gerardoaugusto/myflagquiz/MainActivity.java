@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivityFragment quizFragment= (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.quizFragment);
 
                 if (key.equals(CHOICES)){
-                    //quizFragment.updateGuessRows(sharedPreferences);
+                    quizFragment.updateGuessRows(sharedPreferences);
                 }
             }
         });

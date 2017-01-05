@@ -1,8 +1,20 @@
 package com.gerardoaugusto.myflagquiz;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.content.res.AssetManager;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +25,11 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -80,9 +95,141 @@ public class MainActivityFragment extends Fragment {
         return view;
     }
     private OnClickListener onClickList=new OnClickListener() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void onClick(View view) {
+            Button clicked= (Button) view;
+            String textCl=clicked.getText().toString();
+            String answer=getCountryName(correctAnswer);
+            totalGuesses++;
+            if (textCl.equals(answer)){
+                correctAnswers++;
+                answerTextView.setText(answer+"!");
+                answerTextView.setTextColor(getResources().getColor(R.color.correct_answer,getContext().getTheme()));
 
+                disableButtons();
+                if (correctAnswers==FLAGS_IN_QUIZ){
+                    DialogFragment quizResults=new DialogFragment(){
+                        @NonNull
+                        @Override
+                        public Dialog onCreateDialog(Bundle savedInstanceState) {
+                            AlertDialog.Builder builder= new AlertDialog.Builder(getActivity());
+                            builder.setMessage(getString(R.string.results,totalGuesses,1000/(double) totalGuesses));
+                            builder.setPositiveButton(R.string.reset_quiz, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    resetQuiz();
+                                }
+                            });
+                            return builder.create();
+                        }
+                    };
+                    quizResults.setCancelable(false);
+                    quizResults.show(getFragmentManager(),"Quiz results");
+                }
+            }
         }
     };
+    private void disableButtons(){
+
+    }
+    //Obtiene las preferencias y muestra solo la cantidad de filas adecuadas
+    private void updateGuessRows(SharedPreferences sharedPreferences)
+    {
+        String choices=sharedPreferences.getString(MainActivity.CHOICES,null);
+        int numRows=Integer.parseInt(choices)/2;
+        for (LinearLayout row :guessLinearLayouts)
+        {
+            row.setVisibility(GONE);
+        }
+        for (int i=0;i<numRows;i++){
+            guessLinearLayouts[i].setVisibility(VISIBLE);
+        }
+    }
+    //Restablece el conjunto de regiones
+    public void updateRegions(SharedPreferences sharedPreferences){
+        regionsSet=sharedPreferences.getStringSet(MainActivity.REGIONS,null);
+    }
+    //Restablece la lista de paises y selecciona 10 de manera aleatoria
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void resetQuiz()
+    {
+        AssetManager assets= getActivity().getAssets();
+        fileNameList.clear();
+
+        try{
+            for (String name:regionsSet)
+            {
+                String[] paths=assets.list(name);
+
+                for (String path:paths)
+                {
+                    fileNameList.add(path.replace(".png",""));
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG,"Ha ocurrido un error al cargar el recurso",e);
+        }
+        totalGuesses=0;
+        correctAnswers=0;
+        quizCountriesList.clear();
+
+        int flagCounter=1;
+        int numberOfFlags=fileNameList.size();
+        while(flagCounter<FLAGS_IN_QUIZ){
+            int randomIndex=random.nextInt(numberOfFlags);
+            String file=fileNameList.get(randomIndex);
+            if (!quizCountriesList.contains(file)){
+                quizCountriesList.add(file);
+                flagCounter++;
+            }
+        }
+        loadNextFlag();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    //  Carga la primer bandera y los respectivos botones
+    private void loadNextFlag(){
+        //Obtiene el primer elemento de la lista de paises
+        String nextImage=quizCountriesList.remove(0);
+        correctAnswer=nextImage;
+        answerTextView.setText("");
+        questionNumberTextView.setText(getString(R.string.question,(correctAnswers+1),FLAGS_IN_QUIZ));
+
+        AssetManager assets=getActivity().getAssets();
+        //Obtiene el nombre de la region de la imagen actual
+        String region=nextImage.substring(0,nextImage.indexOf("-"));
+        //Obtiene la imagen y la establece en el ImageView
+        try(InputStream stream=assets.open(region+"/"+nextImage+".png")){
+            Drawable flag=Drawable.createFromStream(stream,nextImage);
+            flagImageView.setImageDrawable(flag);
+
+            //animate(false);
+        } catch (IOException e) {
+            Log.e(TAG,"Se ha producido un error al cargar"+nextImage,e);
+        }
+        //Mezcla los elementos de la coleccion
+        Collections.shuffle(quizCountriesList);
+        //Pone la respuesta correcta al final
+        int indexcorect=quizCountriesList.indexOf(correctAnswer);
+        quizCountriesList.add(quizCountriesList.remove(indexcorect));
+        //Establece el texto de los botones mostrados
+        for (int row=0;row<guessRows;row++)
+        {
+            for (int column=0;column<guessLinearLayouts[row].getChildCount();column++){
+                Button but= (Button) guessLinearLayouts[row].getChildAt(column);
+                but.setEnabled(true);
+
+                String filename=fileNameList.get((row*2)+column);
+                but.setText(getCountryName(filename));
+            }
+        }
+        int randrow=random.nextInt(guessRows);
+        int randcol=random.nextInt(2);
+        String correctCountry=getCountryName(correctAnswer);
+        ((Button) guessLinearLayouts[randrow].getChildAt(randcol)).setText(correctCountry);
+    }
+    private String getCountryName(String name)
+    {
+        return name.substring(name.indexOf("-")+1).replace("_"," ");
+    }
 }
