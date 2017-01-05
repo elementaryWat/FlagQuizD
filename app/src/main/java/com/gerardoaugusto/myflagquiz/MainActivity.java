@@ -61,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
         {
             MainActivityFragment MyFrag= (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.quizFragment);
             //Llamar a los metodos para actualizar el cuestionario de acuerdo a las preferencias
+            MainActivityFragment quizFragment= (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.quizFragment);
+            quizFragment.updateGuessRows(PreferenceManager.getDefaultSharedPreferences(this));
+            quizFragment.updateRegions(PreferenceManager.getDefaultSharedPreferences(this));
+            preferencesChanged=false;
         }
     }
 

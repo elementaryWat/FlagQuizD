@@ -1,5 +1,8 @@
 package com.gerardoaugusto.myflagquiz;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -17,6 +20,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -126,15 +130,34 @@ public class MainActivityFragment extends Fragment {
                     };
                     quizResults.setCancelable(false);
                     quizResults.show(getFragmentManager(),"Quiz results");
+                }else{
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            animate(true);
+                        }
+                    },2000);
                 }
+            }else{
+                flagImageView.startAnimation(shakeAnimation);
+
+                answerTextView.setText(R.string.incorrect_answer);
+                answerTextView.setTextColor(getResources().getColor(R.color.incorrect_answer,getContext().getTheme()));
+                clicked.setEnabled(false);
             }
         }
     };
+    //Desactiva todos los botones activos
+    //Es llamado cuando se contesta correctamente
     private void disableButtons(){
-
+        for (int row=0;row<guessRows;row++){
+            for (int column=0;column<guessLinearLayouts[row].getChildCount();column++){
+                guessLinearLayouts[row].getChildAt(column).setEnabled(false);
+            }
+        }
     }
     //Obtiene las preferencias y muestra solo la cantidad de filas adecuadas
-    private void updateGuessRows(SharedPreferences sharedPreferences)
+    public void updateGuessRows(SharedPreferences sharedPreferences)
     {
         String choices=sharedPreferences.getString(MainActivity.CHOICES,null);
         int numRows=Integer.parseInt(choices)/2;
@@ -152,7 +175,7 @@ public class MainActivityFragment extends Fragment {
     }
     //Restablece la lista de paises y selecciona 10 de manera aleatoria
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void resetQuiz()
+    public void resetQuiz()
     {
         AssetManager assets= getActivity().getAssets();
         fileNameList.clear();
@@ -186,8 +209,9 @@ public class MainActivityFragment extends Fragment {
         }
         loadNextFlag();
     }
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     //  Carga la primer bandera y los respectivos botones
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void loadNextFlag(){
         //Obtiene el primer elemento de la lista de paises
         String nextImage=quizCountriesList.remove(0);
@@ -203,7 +227,7 @@ public class MainActivityFragment extends Fragment {
             Drawable flag=Drawable.createFromStream(stream,nextImage);
             flagImageView.setImageDrawable(flag);
 
-            //animate(false);
+            animate(false);
         } catch (IOException e) {
             Log.e(TAG,"Se ha producido un error al cargar"+nextImage,e);
         }
@@ -227,6 +251,34 @@ public class MainActivityFragment extends Fragment {
         int randcol=random.nextInt(2);
         String correctCountry=getCountryName(correctAnswer);
         ((Button) guessLinearLayouts[randrow].getChildAt(randcol)).setText(correctCountry);
+    }
+    //Se encarga de mostrar la bandera actual utilizando la animacion de reveelacion circular
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void animate(boolean animateOut){
+        if (correctAnswers==0)
+        {
+            return;
+        }
+        int centerX=quizLinearLayout.getWidth()/2;
+        int centerY=quizLinearLayout.getHeight()/2;
+        int radius=Math.max(quizLinearLayout.getWidth(),quizLinearLayout.getHeight());
+
+        Animator animator;
+        if(animateOut){
+            animator= ViewAnimationUtils.createCircularReveal(quizLinearLayout,centerX,centerY,radius,0);
+            animator.addListener(new AnimatorListenerAdapter() {
+                @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    loadNextFlag();
+                    super.onAnimationEnd(animation);
+                }
+            });
+        }else{
+            animator= ViewAnimationUtils.createCircularReveal(quizLinearLayout,centerX,centerY,0,radius);
+        }
+        animator.setDuration(300);
+        animator.start();
     }
     private String getCountryName(String name)
     {
