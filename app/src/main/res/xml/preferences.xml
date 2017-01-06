@@ -3,14 +3,14 @@
     <ListPreference
         android:entries="@array/guesses_list"
         android:entryValues="@array/guesses_list"
-        android:key="pref_number_of_choices"
+        android:key="pref_numberOfChoices"
         android:title="@string/number_of_choices"
         android:summary="@string/number_of_choices_description"
         android:persistent="true"
         android:defaultValue="4"/>
     <MultiSelectListPreference android:entries="@array/regions_list_for_settings"
         android:entryValues="@array/regions_list"
-        android:key="pref_regions_to_include"
+        android:key="pref_regionsToInclude"
         android:title="@string/world_regions"
         android:summary="@string/world_regions_description"
         android:persistent="true"

@@ -160,12 +160,12 @@ public class MainActivityFragment extends Fragment {
     public void updateGuessRows(SharedPreferences sharedPreferences)
     {
         String choices=sharedPreferences.getString(MainActivity.CHOICES,null);
-        int numRows=Integer.parseInt(choices)/2;
+        guessRows=2;
         for (LinearLayout row :guessLinearLayouts)
         {
             row.setVisibility(GONE);
         }
-        for (int i=0;i<numRows;i++){
+        for (int i=0;i<guessRows;i++){
             guessLinearLayouts[i].setVisibility(VISIBLE);
         }
     }
